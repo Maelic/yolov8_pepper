@@ -106,7 +106,8 @@ class BaseTrainer:
         self.last, self.best = self.wdir / 'last.pt', self.wdir / 'best.pt'  # checkpoint paths
         self.save_period = self.args.save_period
 
-
+        # Model and Dataloaders.
+        self.model = self.args.model
 
         self.batch_size = self.args.batch
         self.epochs = self.args.epochs
@@ -115,13 +116,12 @@ class BaseTrainer:
             print_args(vars(self.args))
             if self.args.wandb:
                 run_name = os.path.basename(os.path.normpath(str(self.save_dir)))
+                run_name = self.model.strip('.pt')
                 wandb.init(project=self.args.wandb, config=cfg, name=run_name)
         # Device
         if self.device.type == 'cpu':
             self.args.workers = 0  # faster CPU training as time dominated by inference, not dataloading
 
-        # Model and Dataloaders.
-        self.model = self.args.model
         try:
             if self.args.task == 'classify':
                 self.data = check_cls_dataset(self.args.data)
