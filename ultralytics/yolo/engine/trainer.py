@@ -115,9 +115,9 @@ class BaseTrainer:
         if RANK == -1:
             print_args(vars(self.args))
             if self.args.wandb:
-                run_name = os.path.basename(os.path.normpath(str(self.save_dir)))
-                run_name = self.model.strip('.pt')
-                wandb.init(project=self.args.wandb, config=cfg, name=run_name)
+                #run_name = os.path.basename(os.path.normpath(str(self.save_dir)))
+                run_name = self.args.name
+                wandb.init(project=self.args.wandb, config=cfg, name=str(run_name))
         # Device
         if self.device.type == 'cpu':
             self.args.workers = 0  # faster CPU training as time dominated by inference, not dataloading

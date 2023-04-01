@@ -1,6 +1,6 @@
-train: /home/maelic/Documents/YCB_YOLO/train
-test: /home/maelic/Documents/YCB_YOLO/test
-val: /home/maelic/Documents/YCB_YOLO/val
+train: /home/maelic/Documents/Datasets/YCB_YOLO/train
+test: /home/maelic/Documents/Datasets/YCB_YOLO/test
+val: /home/maelic/Documents/Datasets/YCB_YOLO/val
 
 #Classes
 nc: 21 # replace according to your number of classes
