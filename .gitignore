@@ -135,6 +135,8 @@ dmypy.json
 datasets/
 runs/
 wandb/
+robocup2023/dataset
+robocup2023/model
 
 .DS_Store
 
