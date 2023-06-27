@@ -1,10 +1,11 @@
 #!/bin/sh
-project=yolov8-benchmark
+project=yolov8-few_shot-20
 model=yolov8n
-epochs=5
-resolution=640
+epochs=20
+resolution=320
+out_path=/home/maelic/Documents/training_/yolov8_few_shot/training
 
-name=$model-$resolution-$epochs
+name=$model-$resolution-$epochs-big
 checkpoint=$model.pt
 
 RED='\033[0;31m'
@@ -17,4 +18,4 @@ echo "${RED} Launching training with args: \n ${On_Yellow} - project: $project \
  - name: $name ${NC}"
 
 # YOLO nano
-yolo task=detect mode=train epochs=$epochs batch=-1 model=$checkpoint data=custom_YCB.yaml imgsz=$resolution name=$name wandb=$project
+yolo task=detect mode=train epochs=$epochs batch=-1 model=$checkpoint data=custom_IndoorVG.yaml imgsz=$resolution project=$out_path name=$name wandb=$project optimizer=SGD cos_lr=True

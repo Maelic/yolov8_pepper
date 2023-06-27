@@ -1,6 +1,8 @@
-train: /home/maelic/Documents/PhD/Datasets/VisualGenome/IndoorVG/YOLO_anno/final_anno_IndoorVG/train
-test: /home/maelic/Documents/PhD/Datasets/VisualGenome/IndoorVG/YOLO_anno/final_anno_IndoorVG/test
-val: /home/maelic/Documents/PhD/Datasets/VisualGenome/IndoorVG/YOLO_anno/final_anno_IndoorVG/val
+BASE_PATH: /home/maelic/Documents/PhD/Datasets/VisualGenome/IndoorVG/YOLO_anno/YOLO_anno_small
+
+train:  /home/maelic/Documents/PhD/Datasets/VisualGenome/IndoorVG/YOLO_anno/YOLO_anno_small/train
+test:  /home/maelic/Documents/PhD/Datasets/VisualGenome/IndoorVG/YOLO_anno/YOLO_anno_small/test
+val:  /home/maelic/Documents/PhD/Datasets/VisualGenome/IndoorVG/YOLO_anno/YOLO_anno_small/val
 
 #Classes
 nc: 130 # replace according to your number of classes

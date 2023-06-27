@@ -12,11 +12,39 @@ import cv2
 import qi 
 
 from yolov8 import YOLOv8
-from yolov8.utils import draw_bounding_box_opencv
-from yolov8.utils import class_names as CLASSES
+# from yolov8.utils import draw_bounding_box_opencv
+# from yolov8.utils import class_names as CLASSES
 
-class DarkNet_YCB():
-    def __init__(self):
+# class_names = ['002_master_chef_can',
+# '003_cracker_box',
+# '004_sugar_box',
+# '005_tomato_soup_can',
+# '006_mustard_bottle',
+# '007_tuna_fish_can',
+# '008_pudding_box',
+# '009_gelatin_box',
+# '010_potted_meat_can',
+# '011_banana',
+# '019_pitcher_base',
+# '021_bleach_cleanser',
+# '024_bowl',
+# '025_mug',
+# '035_power_drill',
+# '036_wood_block',
+# '037_scissors',
+# '040_large_marker',
+# '051_large_clamp',
+# '052_extra_large_clamp',
+# '061_foam_brick']
+
+class_names = ['002_master_chef_can', '003_cracker_box', '004_sugar_box', '005_tomato_soup_can', '006_mustard_bottle', '007_tuna_fish_can', '008_pudding_box', '009_gelatin_box', '010_potted_meat_can', '011_banana', '021_bleach_cleanser', '024_bowl', '025_mug', '035_power_drill', '036_wood_block', '037_scissors', '040_large_marker', '051_large_clamp', '052_extra_large_clamp', '061_foam_brick']
+
+
+import argparse
+from Naoqi_camera import NaoqiCamera
+
+class Detector():
+    def __init__(self, model, res):
         rospy.init_node('YoloV8', anonymous=True)
 
         self.bridge = CvBridge()
@@ -24,9 +52,9 @@ class DarkNet_YCB():
         self.session = qi.Session()
         self.session.connect("tcp://127.0.0.1:9559")
 
-        self.initCamerasNaoQi()
+        self.cam = NaoqiCamera(res, "top")
 
-        self.model = "models/yolov8n_ycb.onnx"
+        self.model = model
 
         self.cv2_detector = cv2.dnn.readNetFromONNX(self.model)
 
@@ -37,7 +65,9 @@ class DarkNet_YCB():
 
         self.pub_cv2 = rospy.Publisher(
                 'yolov8_detector_cv', Image2, queue_size=1)
+        
         rospy.on_shutdown(self.cleanup)	
+
         # spin
         print("Waiting for image topics...")
         while not rospy.is_shutdown():
@@ -49,20 +79,18 @@ class DarkNet_YCB():
         self.video_service.unsubscribe(self.videosClient)
         self.session.close()
 
-    def initCamerasNaoQi(self):
-        self.video_service = self.session.service("ALVideoDevice")
-        fps = 30
-        resolution = 2  	# 2 = Image of 640*480px ; 3 = Image of 1280*960px
-        colorSpace = 11  	# RGB
-        self.videosClient = self.video_service.subscribeCamera("cameras", 0, resolution, colorSpace, fps)
 
-    def initCameras(self):
-        self.image_sub = message_filters.Subscriber(
-            "/naoqi_driver/camera/front/image_raw", Image)
-        self.ts = message_filters.ApproximateTimeSynchronizer(
-            [self.image_sub], queue_size=10, slop=0.5)
-        self.ts.registerCallback(self.image_callback)
+    def draw_bounding_box_opencv(self, img, class_id, confidence, x, y, x_plus_w, y_plus_h):
+        # Create a list of colors for each class where each color is a tuple of 3 integer values
+        rng = np.random.default_rng(3)
+        colors = rng.uniform(0, 255, size=(len(class_names), 3))    
 
+        label = f'{class_names[class_id]} ({confidence:.2f})'
+        color = colors[class_id]
+        cv2.rectangle(img, (x, y), (x_plus_w, y_plus_h), color, 2)
+        cv2.putText(img, label, (x - 10, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        return img    
+              
     def detect_onnx(self, image):
         time_1 = time.time()
 
@@ -115,26 +143,25 @@ class DarkNet_YCB():
             box = boxes[index]
             detection = {
                 'class_id': class_ids[index],
-                'class_name': CLASSES[class_ids[index]],
+                'class_name': class_names[class_ids[index]],
                 'confidence': scores[index],
                 'box': box,
                 'scale': scale}
             detections.append(detection)
-            img = draw_bounding_box_opencv(orig_image, class_ids[index], scores[index], round(box[0] * scale), round(box[1] * scale),
+            img = self.draw_bounding_box_opencv(orig_image, class_ids[index], scores[index], round(box[0] * scale), round(box[1] * scale),
                             round((box[0] + box[2]) * scale), round((box[1] + box[3]) * scale))
 
         time_2=time.time()
         print("Detection time OPENCV:", time_2 - time_1)
         print("Object detected OPENCV: ", detections)
+        if len(detections) == 0:
+            return orig_image
         return img
 
     def image_callback(self):
-        naoImage = self.video_service.getImageRemote(self.videosClient)
-        #image_bytes = bytes(bytearray(array))
-        frame = np.frombuffer(naoImage[6], np.uint8).reshape(naoImage[1], naoImage[0], 3)
-        # Create a PIL Image from our pixel array.
-        # im = Image.frombytes("RGB", (imageWidth, imageHeight), image_bytes)
-        onnx_out = self.detect_onnx(frame)
+        frame = self.cam.get_image('cv2')
+
+        # onnx_out = self.detect_onnx(frame)
         print("##############################")
         opencv_out = self.detect_opencv(frame)
 
@@ -142,10 +169,18 @@ class DarkNet_YCB():
 
         self.pub_cv2.publish(ros_image_yolo_cv)
         
-        ros_image_yolo_onnx = self.bridge.cv2_to_imgmsg(onnx_out, "rgb8")
-        self.pub_cv.publish(ros_image_yolo_onnx)
+        # ros_image_yolo_onnx = self.bridge.cv2_to_imgmsg(onnx_out, "rgb8")
+        # self.pub_cv.publish(ros_image_yolo_onnx)
 
 
 if __name__ == '__main__':
+    # get arg 1 and 2
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, default='yolov8n_ycb.onnx', help='model path')
+    parser.add_argument('--res', type=str, default='640', help='resolution')
 
-    DarkNet_YCB()
+    args = parser.parse_args()
+    model = args.model
+    res = args.res
+
+    Detector(model, res)
