@@ -7,9 +7,12 @@ On_Yellow='\033[43m'
 # Training and dataset variables
 # WARNING: project name should match the one from roboflow!
 pepper_ip=pepper2.local
-project=robocup-images
+
+project=robocup-home-2023
+version=1
+
 model=yolov8n
-epochs=200
+epochs=300
 resolution=320
 # Paths
 base_path=$(pwd)/robocup2023
@@ -41,7 +44,7 @@ checkpoint=$model.pt
 
 # STEP 1: download dataset with roboflow
 echo "\n ${RED} Downloading dataset with args: \n ${On_Yellow} - location: $dataset_path ${NC} \n"
-python3 robocup2023/download.py --location $dataset_path --project $project
+python3 robocup2023/download.py --location $dataset_path --project $project --version $version
 
 # STEP 2: train model
 
@@ -71,14 +74,14 @@ echo "\n ${RED} Total time elapse: $runtime ${NC} \n"
 
 # STEP 4: export model to robot
 # rename the best.pt checkpoint
-echo "$\n {RED} Exporting model to robot with args: \n ${On_Yellow} - model name: $name \n \
- - model path: $model_path \n \
- - model name onnx: $model_name_onnx \n \
- - dest path: $dest_path ${NC} \n"
+# echo "$\n {RED} Exporting model to robot with args: \n ${On_Yellow} - model name: $name \n \
+#  - model path: $model_path \n \
+#  - model name onnx: $model_name_onnx \n \
+#  - dest path: $dest_path ${NC} \n"
 
-dest_path=/home/nao/robobreizh_pepper_ws/src/perception_pepper/scripts/models/ObjectDetection/YOLOV8/weights/robocup
-tmp_file=$dataset_path/$task.txt
-scp $model_name_onnx nao@$pepper_ip:$dest_path/$task.onnx
-# get object list from yaml file
-python3 robocup2023/get_object_list.py --yaml $yaml_file --dest $tmp_file
-scp $tmp_file nao@$pepper_ip:$dest_path/$task.txt
+# dest_path=/home/nao/robobreizh_pepper_ws/src/perception_pepper/scripts/models/ObjectDetection/YOLOV8/weights/robocup
+# tmp_file=$dataset_path/$task.txt
+# scp $model_name_onnx nao@$pepper_ip:$dest_path/$task.onnx
+# # get object list from yaml file
+# python3 robocup2023/get_object_list.py --yaml $yaml_file --dest $tmp_file
+# scp $tmp_file nao@$pepper_ip:$dest_path/$task.txt
